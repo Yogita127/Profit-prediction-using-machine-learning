@@ -1,0 +1,7 @@
+In this dataset, there are 3 features (independent variable) and 1 target (dependent) variable for 50 customers. The target variable represents the variable of interest that you want the machine learning model to predicts profit of company accurately. Target variable is in the numerical form, this is a regression problem.
+The variables are : ‘R.D. Spend’, ‘Administration’, and ‘Marketing.Spend’ have an effect on company’s customer.
+The project is structured as follows:
+a.	Exploratory Data Analysis
+b.	Data Preprocessing
+c.	Model Creation and Evaluation
+d.	Improving the Model
