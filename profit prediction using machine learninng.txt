@@ -1,0 +1,99 @@
+#---Importing packages---#
+
+library(tidyverse)                  #used for messy data to convert into meaningful or structured data
+library(lubridate)                  #it make easier to work with dates and times
+library(GGally)                     #GGally extends ggplot2 by adding several functions to reduce the complexity of combining geoms with transformed data.
+library(MLmetrics)                  #to calculate common metrics for ML model like AUC, precision, recall, accuracy, etc.
+library(lmtest)                     #it provides various diagnostic tests for linear regression models. 
+library(car)                        #it provides various functions for applied regression and data visualization 
+library(plotly)                     #creating interactive plots, charts, and dashboards.
+library(data.table)                 #it is designed to handle large datasets efficiently and provides fast syntax for data manipulation and analysis.
+
+setwd("D:/DS")
+f<-read.csv("Exposys_Dataset.csv")
+
+#---Data types---#
+
+glimpse(f)                        #Function is used to display no of rows and columns and data frames of every column
+#<db l> Double vectors contains real number.
+
+#---Checking missing number---#
+any(is.na(f))        
+sum(is.na(f))
+colSums(is.na(f)) 
+
+#---Checking Distribution---#
+ggplot(gather(f %>% select_if(is.numeric)), aes(value)) + 
+  geom_histogram(bins = 10) + 
+  facet_wrap(~key, scales = 'free_x')
+  plot(f %>% select_if(is.numeric))
+
+#---Checking Correlation---#
+ggcorr(f, label = T, hjust= 1, layout.exp = 0)
+
+#---Finding correlation---#
+round(cor(f),ncol(f)) 
+ggplot(f,aes(x = Marketing.Spend, y = Profit)) + geom_point() +geom_smooth(method = "lm")
+ggplot(f,aes(x = R.D.Spend, y = Profit)) + geom_point() +geom_smooth(method = "lm")
+ggplot(f,aes(x = Administration, y = Profit)) + geom_point() +geom_smooth(method = "lm")
+
+
+#---Modelling---#
+set.seed(123)
+index <- sample(nrow(f), nrow(f)*0.8)
+data_train<- f[index, ]
+data_test <- f[-index, ]
+
+
+#---Creating Model---#
+
+#---1.Linear Regression---#
+model <- lm(formula = Profit~., data=data_train)
+summary(model)
+
+
+#---Evaluation to Test Data---#
+prediction_lr <- predict(model,data_test)
+
+rmse2<-RMSE(prediction_lr,data_test$Profit)
+print(paste("Root mean Squared Error (RMSE): ",rmse2))
+
+
+#2.---Multiple Linear Regression---#
+
+model1 <- lm(Profit ~ Administration + Marketing.Spend + R.D.Spend ,data = f)
+summary(model1)
+# Predict on the testing data
+prediction_mr <- predict(model1, data_test)
+rmse1<-RMSE(prediction_mr,data_test$Profit)
+print(paste("Root mean Squared Error (RMSE): ",rmse1))
+
+
+
+#---3.Polynomial regression---#
+data <- data.frame(Profit = f$Profit,
+                   Administration = f$Administration,
+                   R.D.Spend = f$R.D.Spend,
+                   Marketing.Spend = f$Marketing.Spend)
+
+# Fit a polynomial regression model of degree 2
+
+model2 <- lm(Profit ~ poly(Administration, 2) + poly(R.D.Spend, 2) + poly(Marketing.Spend, 2), data_train)
+summary(model2)
+# Predict on the testing data
+prediction_pr <- predict(model2, data_test)
+rmse2 <- sqrt(mean((prediction_pr - data_test$Profit)^2))
+print(paste("Root mean Squared Error (RMSE): ",rmse2))
+
+
+#Compairning the RMSE values
+data.frame(RMSE = c(RMSE(prediction_lr,data_test$Profit),
+                    RMSE(prediction_mr,data_test$Profit),
+                    RMSE(prediction_pr,data_test$Profit)),
+           
+           model = c("Linear-Regression","Multi-Regression","Poly-Regression"))
+
+
+#---Model Evaluation---#
+library(performance)
+compare_performance(model,model1,model2)
